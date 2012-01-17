@@ -28,11 +28,19 @@ import (
 	"path"
 )
 
+const (
+	onlyFileDefault      = "index.html"
+	downloadCountDefault = 0
+)
+
 var (
-	host       = flag.String("host", "0.0.0.0:8080", "listening port and hostname")
-	noUpload   = flag.Bool("n", false, "only allow downloads")
-	help       = flag.Bool("h", false, "show this help")
-	rootdir, _ = os.Getwd()
+	host          = flag.String("host", "0.0.0.0:8080", "listening port and hostname")
+	noUpload      = flag.Bool("n", false, "only allow downloads")
+	help          = flag.Bool("h", false, "show this help")
+	onlyFile      = flag.String("f", onlyFileDefault, "restrict to one file")
+	downloadCount = flag.Int("d", downloadCountDefault, "Max number of downloads")
+	dcounter      = *downloadCount
+	rootdir, _    = os.Getwd()
 )
 
 func usage() {
@@ -56,17 +64,24 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 // because getting a 404 when trying to use http.FileServer. beats me.
 func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
+	dcounter = dcounter + 1
+	fmt.Println("url:", url)
+	fmt.Println("filename:", *onlyFile)
+	fmt.Printf("count: %d of %d\n", *downloadCount, dcounter)
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
+
+	// If downloads has reaced max and downloadCount is not the default value
+	if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
+		log.Fatal("Max downloads reaced, quitting...")
+	}
+
+	// Serve only the file specified by user
+	if *onlyFile != onlyFileDefault {
+		http.ServeFile(w, r, path.Join(rootdir, *onlyFile))
+		return
+	}
 	http.ServeFile(w, r, path.Join(rootdir, url))
 }
-
-// A restricted version that only serves specified file
-//func myFileServer(w http.ResponseWriter, r *http.Request, url string, filename string) {
-//	fmt.Println("url:", url)
-//	fmt.Println("filename:", filename)
-//	http.ServeFile(w, r, path.Join(rootdir, url))
-//
-//}
 
 func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 	mr, err := r.MultipartReader()
@@ -157,7 +172,7 @@ func main() {
 	}
 
 	// if flag is set we don't register the uploadHandler
-	if *noUpload == false {
+	if *noUpload == false || *onlyFile != onlyFileDefault {
 		http.HandleFunc("/upload", makeHandler(uploadHandler))
 	}
 	http.Handle("/", makeHandler(myFileServer))
