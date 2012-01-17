@@ -65,9 +65,6 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 // because getting a 404 when trying to use http.FileServer. beats me.
 func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
 	dcounter = dcounter + 1
-	fmt.Println("url:", url)
-	fmt.Println("filename:", *onlyFile)
-	fmt.Printf("count: %d of %d\n", *downloadCount, dcounter)
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
 
 	// If downloads has reaced max and downloadCount is not the default value
