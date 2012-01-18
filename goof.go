@@ -9,6 +9,10 @@ Originally based on SimpleHttpd by mpl (github)
 Written by Fredrik Steen <stone@ppo2.se>
 
 Changelog:
+v0.2:
+  * Added option to stop serving after X requests
+  * Added flag to only serve one file
+  * Some cleanups.
 
 v0.1:
   * Added possibility to make goof a download only server.
