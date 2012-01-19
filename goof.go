@@ -37,6 +37,23 @@ const (
 	downloadCountDefault = 0
 )
 
+const uploadform = `
+<html>
+<head>
+  <title>Upload file</title>
+</head>
+<body>
+  <h1>Upload file</h1>
+
+  <form action="/upload" method="POST" id="uploadform" enctype="multipart/form-data">
+    <input type="file" id="fileinput" multiple="true" name="file">
+    <input type="submit" id="filesubmit" value="Upload">
+  </form>
+
+</body>
+</html>
+`
+
 var (
 	host          = flag.String("host", "0.0.0.0:8080", "listening port and hostname")
 	noUpload      = flag.Bool("n", false, "only allow downloads")
@@ -71,9 +88,9 @@ func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
 	dcounter = dcounter + 1
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
 
-	// If downloads has reaced max and downloadCount is not the default value
+	// If downloads has reached max and downloadCount is not the default value
 	if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
-		log.Fatal("Max downloads reaced, quitting...")
+		log.Fatal("Max downloads reached, quitting...")
 	}
 
 	// Serve only the file specified by user
@@ -126,8 +143,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 		}
 		defer f.Close()
 
-		_, err = buf.WriteTo(f)
-		if err != nil {
+		if _, err = buf.WriteTo(f); err != nil {
 			http.Error(w, "writing: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -139,25 +155,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 
 // Called from myFileServer to serve the upload form
 func uploadFormHandler(w http.ResponseWriter, r *http.Request, url string) {
-	//TODO: make below a constant
-	contents := `
-<html>
-<head>
-  <title>Upload file</title>
-</head>
-<body>
-  <h1>Upload file</h1>
-
-  <form action="/upload" method="POST" id="uploadform" enctype="multipart/form-data">
-    <input type="file" id="fileinput" multiple="true" name="file">
-    <input type="submit" id="filesubmit" value="Upload">
-  </form>
-
-</body>
-</html>
-`
 	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
-	fmt.Fprintf(w, contents)
+	fmt.Fprintf(w, uploadform)
 }
 
 func main() {
