@@ -31,6 +31,11 @@ Example:
     2012/01/17 16:15:44 127.0.0.1:38347 POST linux_3.2.0-7.13.tar.gz
 
 
+To upload files with curl:
+
+   stone@ppo2:/tmp$ curl -F file=@filetosend.iso  http://remotehost:8080/upload
+
+
 Note 1: You need the [go][] runtime, <http://golang.org/>
 
 Note 2: this is just a toy project in my adventures in the go language, it probably works
