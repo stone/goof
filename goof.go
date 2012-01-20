@@ -54,6 +54,10 @@ func usage() {
 	os.Exit(2)
 }
 
+func plog(r *http.Request) {
+	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
+}
+
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -70,7 +74,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 // because getting a 404 when trying to use http.FileServer. beats me.
 func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
 	dcounter = dcounter + 1
-	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
+	plog(r)
 
 	// If downloads has reached max and downloadCount is not the default value
 	if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
@@ -111,11 +115,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 			continue
 		}
 
-		log.Printf("%s %s %s", r.RemoteAddr, r.Method, fileName)
+		plog(r)
 
 		buf := bytes.NewBuffer(make([]byte, 0))
-		_, err = io.Copy(buf, part)
-		if err != nil {
+		if _, err = io.Copy(buf, part); err != nil {
 			http.Error(w, "copying: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -139,7 +142,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 
 // Called from myFileServer to serve the upload form
 func uploadFormHandler(w http.ResponseWriter, r *http.Request, url string) {
-	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
+	plog(r)
 	fmt.Fprintf(w, uploadform)
 }
 
