@@ -55,7 +55,7 @@ func usage() {
 }
 
 func plog(r *http.Request) {
-	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RawPath)
+	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RequestURI())
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
