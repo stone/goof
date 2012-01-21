@@ -33,7 +33,7 @@ Example:
 
 To upload files with curl:
 
-   stone@ppo2:/tmp$ curl -F file=@filetosend.iso  http://remotehost:8080/upload
+    stone@ppo2:/tmp$ curl -F file=@filetosend.iso  http://remotehost:8080/upload
 
 
 Note 1: You need the [go][] runtime, <http://golang.org/>
