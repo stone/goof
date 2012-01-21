@@ -9,6 +9,12 @@ Originally based on SimpleHttpd by mpl (github)
 Written by Fredrik Steen <stone@ppo2.se>
 
 Changelog:
+  * New logging
+  * General cleanups
+  * New net/http golang fixes
+  * Moved html code to own file
+  * New upload form html
+
 v0.2:
   * Added option to stop serving after X requests
   * Added flag to only serve one file
@@ -53,7 +59,6 @@ const (
 	downloadCountDefault = 0
 )
 
-
 var (
 	host          = flag.String("host", "0.0.0.0:8080", "listening port and hostname")
 	noUpload      = flag.Bool("n", false, "only allow downloads")
@@ -68,10 +73,6 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "usage: goof [flags]")
 	flag.PrintDefaults()
 	os.Exit(2)
-}
-
-func plog(r *http.Request) {
-	log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RequestURI())
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -89,13 +90,15 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 // because getting a 404 when trying to use http.FileServer. beats me.
 func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
-	dcounter = dcounter + 1
-	plog(r)
-
-	// If downloads has reached max and downloadCount is not the default value
-	if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
-		log.Fatal("Max downloads reached, quitting...")
-	}
+	// Keep track of how many times a file has been downloaded
+	// And only if downloadCount flag is not zero
+	if *downloadCount != 0 {
+	    dcounter = dcounter + 1
+	    // If downloads has reached max and downloadCount is not the default value
+	    if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
+	        log.Fatal("Max downloads reached, quitting...")
+	    }
+        }
 
 	// Serve only the file specified by user
 	if *onlyFile != onlyFileDefault {
@@ -127,11 +130,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 		}
 
 		fileName := part.FileName()
+
 		if fileName == "" {
 			continue
 		}
-
-		plog(r)
 
 		buf := bytes.NewBuffer(make([]byte, 0))
 		if _, err = io.Copy(buf, part); err != nil {
@@ -158,8 +160,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, url string) {
 
 // Called from myFileServer to serve the upload form
 func uploadFormHandler(w http.ResponseWriter, r *http.Request, url string) {
-	plog(r)
 	fmt.Fprintf(w, uploadform)
+}
+
+// http.DefaultServeMux wrapper that implements logging.
+func Log(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -174,6 +183,8 @@ func main() {
 		usage()
 	}
 
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
 	// if flag is set we don't register the uploadHandler
 	if *noUpload == false || *onlyFile != onlyFileDefault {
 		http.HandleFunc("/upload", makeHandler(uploadHandler))
@@ -182,7 +193,8 @@ func main() {
 
 	log.Printf("Serving %s on http://%s/", rootdir, *host)
 
-	err := http.ListenAndServe(*host, nil)
+	// Use our own DefaultServeMux "Log" and wrap DefaultServeMux
+	err := http.ListenAndServe(*host, Log(http.DefaultServeMux))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
