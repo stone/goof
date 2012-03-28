@@ -93,12 +93,12 @@ func myFileServer(w http.ResponseWriter, r *http.Request, url string) {
 	// Keep track of how many times a file has been downloaded
 	// And only if downloadCount flag is not zero
 	if *downloadCount != 0 {
-	    dcounter = dcounter + 1
-	    // If downloads has reached max and downloadCount is not the default value
-	    if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
-	        log.Fatal("Max downloads reached, quitting...")
-	    }
-        }
+		dcounter = dcounter + 1
+		// If downloads has reached max and downloadCount is not the default value
+		if dcounter > *downloadCount && *downloadCount != downloadCountDefault {
+			log.Fatal("Max downloads reached, quitting...")
+		}
+	}
 
 	// Serve only the file specified by user
 	if *onlyFile != onlyFileDefault {
